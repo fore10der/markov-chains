@@ -11,7 +11,6 @@ async function main() {
     const connection = await connectToQueue()
 
     const channel = await connection.createChannel();
-    const queue = 'TaskQueue';
     await channel.assertQueue(TASK_QUEUE_NAME, { durable: false });
 
     function simulateMarkovChain(state, steps) {
@@ -49,13 +48,21 @@ async function main() {
     }
 
 
-    console.log(" [*] Waiting for messages in %s. To exit press CTRL+C", queue);
-    channel.consume(queue, async (msg) => {
+    console.log(" [*] Waiting for messages in %s. To exit press CTRL+C", TASK_QUEUE_NAME);
+    channel.consume(TASK_QUEUE_NAME, async (msg) => {
         const task = JSON.parse(msg.content.toString());
         const finalState = simulateMarkovChain(task.state, task.steps);
-        console.log(finalState)
         await sendResult(finalState);
     }, { noAck: true });
+
+    process.on('SIGINT', () => {
+        connection.close();
+        process.exit()
+    });
+    process.on('SIGTERM', () => {
+        connection.close();
+        process.exit()
+    });
 }
 
 main()
