@@ -1,15 +1,14 @@
-const amqp = require('amqplib');
+const {connectToQueue} = require("./utils");
+const {TASK_QUEUE_NAME} = require("./const");
 
 async function main() {
-    const connection = await amqp.connect('amqp://rmuser:rmpassword@localhost');
+    const connection = await connectToQueue()
 
     async function sendTask(state, steps) {
 
-        const queue = 'TaskQueue';
-
         const channel = await connection.createChannel();
-        await channel.assertQueue(queue, { durable: false });
-        channel.sendToQueue(queue, Buffer.from(JSON.stringify({ state, steps })));
+        await channel.assertQueue(TASK_QUEUE_NAME, { durable: false });
+        channel.sendToQueue(TASK_QUEUE_NAME, Buffer.from(JSON.stringify({ state, steps })));
         console.log(" [x] Sent %s", JSON.stringify({ state, steps }));
         await channel.close();
     }
